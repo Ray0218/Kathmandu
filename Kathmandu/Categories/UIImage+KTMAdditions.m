@@ -7,6 +7,7 @@
 //
 
 #import "UIImage+KTMAdditions.h"
+#import <ImageIO/ImageIO.h>
 
 @implementation UIImage (KTMAdditions)
 
@@ -14,13 +15,13 @@
     CGRect rect = CGRectMake(0, 0, 1, 1);
     UIGraphicsBeginImageContext(rect.size);
     CGContextRef context = UIGraphicsGetCurrentContext();
-    
+
     CGContextSetFillColorWithColor(context, [color CGColor]);
     CGContextFillRect(context, rect);
-    
+
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    
+
     return image;
 }
 
@@ -47,26 +48,26 @@
     [tintColor setFill];
     CGRect bounds = CGRectMake(0, 0, self.size.width, self.size.height);
     UIRectFill(bounds);
-    
+
     //Draw the tinted image in context
     [self drawInRect:bounds blendMode:blendMode alpha:1.0f];
-    
+
     if (blendMode != kCGBlendModeDestinationIn) {
         [self drawInRect:bounds blendMode:kCGBlendModeDestinationIn alpha:1.0f];
     }
-    
+
     UIImage *tintedImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    
+
     return tintedImage;
 }
 
-#pragma mark - resize 
+#pragma mark - resize
 
 - (UIImage *)dp_roundImageWithDiameter:(CGFloat)diameter {
     CGFloat width = CGImageGetWidth(self.CGImage);
     CGFloat height = CGImageGetHeight(self.CGImage);
-    
+
     CGRect drawRect;
     if (width < height) {
         drawRect.size.height = diameter;
@@ -77,7 +78,7 @@
         drawRect.size.height = diameter / width * height;
         drawRect.origin = CGPointMake(0, (diameter - drawRect.size.height) / 2);
     }
-    
+
     CGRect bounds = CGRectMake(0, 0, diameter, diameter);
     UIGraphicsBeginImageContextWithOptions(bounds.size, NO, self.scale);
     [[UIBezierPath bezierPathWithRoundedRect:bounds
@@ -85,14 +86,14 @@
     [self drawInRect:drawRect];
     UIImage *finalImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
-    
+
     return finalImage;
 }
 
 - (UIImage *)dp_resizedImageToSize:(CGSize)dstSize {
     CGImageRef imgRef = self.CGImage;
     // the below values are regardless of orientation : for UIImages from Camera, width>height (landscape)
-    CGSize srcSize = CGSizeMake(CGImageGetWidth(imgRef), CGImageGetHeight(imgRef)); // not equivalent to self.size (which is dependant on the imageOrientation)!
+    CGSize srcSize = CGSizeMake(CGImageGetWidth(imgRef), CGImageGetHeight(imgRef));    // not equivalent to self.size (which is dependant on the imageOrientation)!
 
     /* Don't resize if we already meet the required destination size. */
     if (CGSizeEqualToSize(srcSize, dstSize)) {
@@ -103,46 +104,45 @@
     UIImageOrientation orient = self.imageOrientation;
     CGAffineTransform transform = CGAffineTransformIdentity;
     switch (orient) {
-
-        case UIImageOrientationUp: //EXIF = 1
+        case UIImageOrientationUp:    //EXIF = 1
             transform = CGAffineTransformIdentity;
             break;
 
-        case UIImageOrientationUpMirrored: //EXIF = 2
+        case UIImageOrientationUpMirrored:    //EXIF = 2
             transform = CGAffineTransformMakeTranslation(srcSize.width, 0.0);
             transform = CGAffineTransformScale(transform, -1.0, 1.0);
             break;
 
-        case UIImageOrientationDown: //EXIF = 3
+        case UIImageOrientationDown:    //EXIF = 3
             transform = CGAffineTransformMakeTranslation(srcSize.width, srcSize.height);
             transform = CGAffineTransformRotate(transform, M_PI);
             break;
 
-        case UIImageOrientationDownMirrored: //EXIF = 4
+        case UIImageOrientationDownMirrored:    //EXIF = 4
             transform = CGAffineTransformMakeTranslation(0.0, srcSize.height);
             transform = CGAffineTransformScale(transform, 1.0, -1.0);
             break;
 
-        case UIImageOrientationLeftMirrored: //EXIF = 5
+        case UIImageOrientationLeftMirrored:    //EXIF = 5
             dstSize = CGSizeMake(dstSize.height, dstSize.width);
             transform = CGAffineTransformMakeTranslation(srcSize.height, srcSize.width);
             transform = CGAffineTransformScale(transform, -1.0, 1.0);
             transform = CGAffineTransformRotate(transform, 3.0 * M_PI_2);
             break;
 
-        case UIImageOrientationLeft: //EXIF = 6
+        case UIImageOrientationLeft:    //EXIF = 6
             dstSize = CGSizeMake(dstSize.height, dstSize.width);
             transform = CGAffineTransformMakeTranslation(0.0, srcSize.width);
             transform = CGAffineTransformRotate(transform, 3.0 * M_PI_2);
             break;
 
-        case UIImageOrientationRightMirrored: //EXIF = 7
+        case UIImageOrientationRightMirrored:    //EXIF = 7
             dstSize = CGSizeMake(dstSize.height, dstSize.width);
             transform = CGAffineTransformMakeScale(-1.0, 1.0);
             transform = CGAffineTransformRotate(transform, M_PI_2);
             break;
 
-        case UIImageOrientationRight: //EXIF = 8
+        case UIImageOrientationRight:    //EXIF = 8
             dstSize = CGSizeMake(dstSize.height, dstSize.width);
             transform = CGAffineTransformMakeTranslation(srcSize.height, 0.0);
             transform = CGAffineTransformRotate(transform, M_PI_2);
@@ -185,7 +185,7 @@
 - (UIImage *)dp_resizedImageToFitInSize:(CGSize)boundingSize scaleIfSmaller:(BOOL)scale {
     // get the image size (independant of imageOrientation)
     CGImageRef imgRef = self.CGImage;
-    CGSize srcSize = CGSizeMake(CGImageGetWidth(imgRef), CGImageGetHeight(imgRef)); // not equivalent to self.size (which depends on the imageOrientation)!
+    CGSize srcSize = CGSizeMake(CGImageGetWidth(imgRef), CGImageGetHeight(imgRef));    // not equivalent to self.size (which depends on the imageOrientation)!
 
     // adjust boundingSize to make it independant on imageOrientation too for farther computations
     UIImageOrientation orient = self.imageOrientation;
@@ -206,7 +206,7 @@
 
     if (!scale && (srcSize.width < boundingSize.width) && (srcSize.height < boundingSize.height)) {
         //NSLog(@"Image is smaller, and we asked not to scale it in this case (scaleIfSmaller:NO)");
-        dstSize = srcSize; // no resize (we could directly return 'self' here, but we draw the image anyway to take image orientation into account)
+        dstSize = srcSize;    // no resize (we could directly return 'self' here, but we draw the image anyway to take image orientation into account)
     } else {
         CGFloat wRatio = boundingSize.width / srcSize.width;
         CGFloat hRatio = boundingSize.height / srcSize.height;
@@ -232,5 +232,85 @@
     return croppedImage;
 }
 
+//压缩图片质量
++ (UIImage *)reduceImage:(UIImage *)image percent:(float)percent {
+    NSData *imageData = UIImageJPEGRepresentation(image, percent);
+    UIImage *newImage = [UIImage imageWithData:imageData];
+    return newImage;
+}
+//压缩图片尺寸
++ (UIImage *)imageWithImageSimple:(UIImage *)image scaledToSize:(CGSize)newSize {
+    // Create a graphics image context
+    UIGraphicsBeginImageContext(newSize);
+    // new size
+    [image drawInRect:CGRectMake(0, 0, newSize.width, newSize.height)];
+    // Get the new image from the context
+    UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
+
+    // End the context
+    UIGraphicsEndImageContext();
+    // Return the new image.
+    return newImage;
+}
+
+static size_t getAssetBytesCallback(void *info, void *buffer, off_t position, size_t count) {
+    ALAssetRepresentation *rep = (__bridge id)info;
+
+    NSError *error = nil;
+    size_t countRead = [rep getBytes:(uint8_t *)buffer fromOffset:position length:count error:&error];
+
+    if (countRead == 0 && error) {
+        // We have no way of passing this info back to the caller, so we log it, at least.
+        NSLog(@"thumbnailForAsset:maxPixelSize: got an error reading an asset: %@", error);
+    }
+
+    return countRead;
+}
+
+static void releaseAssetCallback(void *info) {
+    // The info here is an ALAssetRepresentation which we CFRetain in thumbnailForAsset:maxPixelSize:.
+    // This release balances that retain.
+    CFRelease(info);
+}
+
+// Returns a UIImage for the given asset, with size length at most the passed size.
+// The resulting UIImage will be already rotated to UIImageOrientationUp, so its CGImageRef
+// can be used directly without additional rotation handling.
+// This is done synchronously, so you should call this method on a background queue/thread.
+- (UIImage *)thumbnailForAsset:(ALAsset *)asset maxPixelSize:(NSUInteger)size {
+    NSParameterAssert(asset != nil);
+    NSParameterAssert(size > 0);
+
+    ALAssetRepresentation *rep = [asset defaultRepresentation];
+
+    CGDataProviderDirectCallbacks callbacks = {
+        .version = 0,
+        .getBytePointer = NULL,
+        .releaseBytePointer = NULL,
+        .getBytesAtPosition = getAssetBytesCallback,
+        .releaseInfo = releaseAssetCallback,
+    };
+
+    CGDataProviderRef provider = CGDataProviderCreateDirect((void *)CFBridgingRetain(rep), [rep size], &callbacks);
+    CGImageSourceRef source = CGImageSourceCreateWithDataProvider(provider, NULL);
+
+    CGImageRef imageRef = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef) @{
+        (NSString *)kCGImageSourceCreateThumbnailFromImageAlways : @YES,
+        (NSString *)kCGImageSourceThumbnailMaxPixelSize : [NSNumber numberWithUnsignedInteger:size],
+        (NSString *)kCGImageSourceCreateThumbnailWithTransform : @YES,
+    });
+    CFRelease(source);
+    CFRelease(provider);
+
+    if (!imageRef) {
+        return nil;
+    }
+
+    UIImage *toReturn = [UIImage imageWithCGImage:imageRef];
+
+    CFRelease(imageRef);
+
+    return toReturn;
+}
 
 @end
